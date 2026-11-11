@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: traffic-sensor-simulator
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+  kafka:
+    bootstrap-servers: kafka:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      properties:
+        enable.idempotence: true
+
+traffic:
+  zones: Zona A,Zona B,Zona C,Zona D
+  max-vehicles: 41
+  publish-interval-ms: 2000
+
+logging:
+  pattern:
+    console: "%d{HH:mm:ss} %-5level %msg%n"
