@@ -22,6 +22,7 @@
         <module>traffic-domain</module>
         <module>traffic-messaging</module>
         <module>traffic-sensor-simulator</module>
+        <module>traffic-density-processor</module>
     </modules>
 
     <dependencyManagement>
