@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: traffic-density-processor
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+  kafka:
+    bootstrap-servers: kafka:9092
+    consumer:
+      group-id: traffic-density-processor
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    listener:
+      missing-topics-fatal: false
+  rabbitmq:
+    host: rabbitmq
+    username: smarttraffic
+    password: smarttraffic
+
+traffic:
+  density:
+    strategy: weighted
+    window-size: 5
+  broadcast-interval-ms: 5000
+
+logging:
+  pattern:
+    console: "%d{HH:mm:ss} %-5level %msg%n"
