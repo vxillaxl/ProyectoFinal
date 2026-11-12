@@ -1,0 +1,23 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: user-dashboard-backend
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+  rabbitmq:
+    host: rabbitmq
+    username: smarttraffic
+    password: smarttraffic
+    listener:
+      simple:
+        default-requeue-rejected: false
+        prefetch: 1
+
+logging:
+  pattern:
+    console: "%d{HH:mm:ss} %-5level %msg%n"

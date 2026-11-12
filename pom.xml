@@ -24,6 +24,9 @@
         <module>traffic-sensor-simulator</module>
         <module>traffic-density-processor</module>
         <module>traffic-archiver</module>
+        <module>user-dashboard-backend</module>
+        <module>alert-dispatcher</module>
+        <module>query-client</module>
     </modules>
 
     <dependencyManagement>
