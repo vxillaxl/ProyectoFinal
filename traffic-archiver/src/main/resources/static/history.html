@@ -565,7 +565,7 @@
         openSheet("Alertas recientes", body);
     });
     document.getElementById("nav-config").addEventListener("click", () => {
-        openSheet("Umbrales del semáforo", "<p><b class=\"DESPEJADA\">DESPEJADA</b> por debajo de 10 vehículos.</p><p><b class=\"MODERADA\">MODERADA</b> de 10 a 24 vehículos.</p><p><b class=\"CONGESTIONADA\">CONGESTIONADA</b> desde 25 vehículos.</p><p>La densidad del tablero es el promedio de las últimas 5 lecturas de cada zona.</p>");
+        openSheet("Umbrales del semáforo", "<p><b class=\"DESPEJADA\">DESPEJADA</b> por debajo de 10 vehículos.</p><p><b class=\"MODERADA\">MODERADA</b> de 10 a 24 vehículos.</p><p><b class=\"CONGESTIONADA\">CONGESTIONADA</b> desde 25 vehículos.</p><p>La densidad del tablero es el promedio ponderado de las últimas 5 lecturas de cada zona: la más reciente pesa más.</p>");
     });
     document.getElementById("refresh").addEventListener("click", load);
     tick();
