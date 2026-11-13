@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: query-client
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+  rabbitmq:
+    host: rabbitmq
+    username: smarttraffic
+    password: smarttraffic
+    listener:
+      simple:
+        default-requeue-rejected: false
+        prefetch: 1
+
+traffic:
+  client-id: client_456
+  query-interval-ms: 15000
+  query-initial-delay-ms: 12000
+  routes: Zona A|Zona B;Zona C;Zona A|Zona C|Zona D;Zona B|Zona D
+
+logging:
+  pattern:
+    console: "%d{HH:mm:ss} %-5level %msg%n"
