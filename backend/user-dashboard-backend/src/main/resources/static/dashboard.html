@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SmartTraffic</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            color-scheme: dark;
+            --text: #f4f8ff;
+            --muted: #9eb6cf;
+            --cyan: #3ce7ff;
+            --clear: #19f0a0;
+            --moderate: #ffc83d;
+            --congested: #ff3b5c;
+            --glass: rgba(6, 14, 28, 0.78);
+            --line: rgba(80, 190, 255, 0.45);
+        }
+        * { box-sizing: border-box; }
+        html, body { margin: 0; min-height: 100%; }
+        body {
+            font-family: "Segoe UI", Bahnschrift, system-ui, sans-serif;
+            color: var(--text);
+            background: #040814;
+        }
+        button, a { font: inherit; }
+        .app { display: grid; grid-template-columns: 228px minmax(0, 1fr); min-height: 100vh; }
+        .side {
+            display: flex;
+            flex-direction: column;
+            background: #07111d;
+            border-right: 1px solid rgba(60, 190, 255, 0.22);
+        }
+        .brand { display: flex; gap: 10px; align-items: center; padding: 18px 16px 6px; }
+        .brand svg { width: 46px; height: 46px; filter: drop-shadow(0 0 10px rgba(60, 231, 255, 0.55)); }
+        .brand b { display: block; font-size: 16px; }
+        .brand span { color: var(--muted); font-size: 12px; }
+        nav { display: flex; flex-direction: column; gap: 4px; padding: 14px 12px; }
+        nav button, nav a {
+            display: flex; align-items: center; gap: 10px;
+            width: 100%; text-align: left;
+            color: #d5e4f4; text-decoration: none;
+            background: transparent; border: 1px solid transparent;
+            border-radius: 12px; padding: 10px 12px; cursor: pointer; font-weight: 650;
+        }
+        nav svg { width: 18px; height: 18px; flex: none; }
+        nav .active {
+            color: white;
+            background: linear-gradient(90deg, #1d6fe6, #12386f);
+            border-color: rgba(120, 210, 255, 0.8);
+            box-shadow: 0 0 16px rgba(40, 140, 255, 0.4);
+        }
+        .side-photo {
+            position: relative;
+            margin-top: auto;
+            aspect-ratio: 230 / 392;
+            background-image: url("img/06_sidebar_city_car.png");
+            background-size: 100% 100%;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+        .side-photo p {
+            position: absolute;
+            left: 9%;
+            right: 8%;
+            bottom: 7%;
+            margin: 0;
+            font-family: Orbitron, Bahnschrift, sans-serif;
+            font-weight: 700;
+            font-size: 11px;
+            letter-spacing: 0.12em;
+            line-height: 1.7;
+            text-transform: uppercase;
+            color: #f3feff;
+            text-shadow:
+                0 0 1px #ffffff,
+                0 0 6px #9af8ff,
+                0 0 14px #3ce7ff,
+                0 0 28px #00a2ff,
+                0 0 48px #0055ff;
+        }
+        .main { padding: 12px 14px 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+        .hero {
+            aspect-ratio: 1648 / 220;
+            border-radius: 18px;
+            overflow: hidden;
+            background-image: url("img/01_hero_city_road.png");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            box-shadow: 0 0 28px rgba(40, 140, 255, 0.28);
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            padding: 16px 18px;
+        }
+        .eyebrow {
+            margin: 0 0 2px; color: var(--cyan); letter-spacing: 0.2em;
+            text-transform: uppercase; font-size: 12px; font-weight: 800;
+            text-shadow: 0 2px 8px #000;
+        }
+        h1 {
+            margin: 0; font-size: 44px; line-height: 0.95; letter-spacing: -0.045em;
+            background: linear-gradient(90deg, #ffffff, #7af4ff);
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+            filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.7));
+        }
+        .subtitle { margin: 6px 0 0; text-shadow: 0 2px 8px #000; }
+        .hero-side { display: flex; align-items: center; gap: 10px; }
+        .clock, .pill, .kpi, .sheet {
+            background: var(--glass);
+            border: 1px solid var(--line);
+            box-shadow: 0 0 16px rgba(40, 140, 255, 0.18);
+        }
+        .clock { border-radius: 14px; padding: 7px 12px; text-align: right; }
+        .clock b { display: block; font-size: 22px; font-variant-numeric: tabular-nums; }
+        .clock span { color: #d5e6f6; font-size: 12px; }
+        .pill {
+            display: inline-flex; align-items: center; gap: 8px;
+            border-radius: 999px; padding: 8px 12px; font-weight: 800;
+        }
+        .pill.live { color: var(--clear); border-color: rgba(25, 240, 160, 0.8); box-shadow: 0 0 14px rgba(25, 240, 160, 0.28); }
+        .pill.down { color: var(--congested); border-color: rgba(255, 59, 92, 0.75); }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; box-shadow: 0 0 8px currentColor; }
+        .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+        .kpi { border-radius: 16px; padding: 12px 14px; display: flex; gap: 12px; align-items: center; min-width: 0; }
+        .kpi > div:last-child { min-width: 0; }
+        .ico {
+            width: 42px; height: 42px; border-radius: 12px; flex: none;
+            display: grid; place-items: center;
+            background: rgba(8, 24, 48, 0.8);
+            border: 1px solid rgba(80, 190, 255, 0.35);
+        }
+        .ico svg { width: 22px; height: 22px; }
+        .kpi span { display: block; color: var(--muted); font-size: 12px; letter-spacing: 0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .kpi strong { display: block; font-size: clamp(20px, 1.5vw, 28px); letter-spacing: -0.04em; line-height: 1.05; }
+        .kpi small { display: block; margin: 1px 0 0; color: var(--muted); font-size: 12px; font-weight: 650; }
+        .zones { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+        .zone {
+            position: relative;
+            overflow: hidden;
+            border-radius: 18px;
+            aspect-ratio: 453 / 254;
+            background-size: 100% 100%;
+            background-position: center;
+            background-repeat: no-repeat;
+            box-shadow: 0 0 18px var(--glow);
+            container-type: inline-size;
+        }
+        .scene-clear { --glow: rgba(25, 240, 160, 0.4); background-image: url("img/02_despejado_453x254.png"); }
+        .scene-moderate { --glow: rgba(255, 200, 61, 0.4); background-image: url("img/03_moderado_453x254.png"); }
+        .scene-congested { --glow: rgba(255, 59, 92, 0.42); background-image: url("img/04_congestionado_453x254.png"); }
+        .zone-top { position: absolute; top: 10%; left: 8%; right: 7%; display: flex; justify-content: space-between; align-items: center; gap: 6px; min-width: 0; }
+        .zone h3 { margin: 0; min-width: 0; font-size: clamp(14px, 7cqi, 20px); text-shadow: 0 1px 2px #000, 0 0 8px #000, 0 2px 10px #000; }
+        .badge {
+            flex: none; max-width: 54%;
+            border-radius: 999px; padding: 2px 6px; font-size: clamp(7px, 3.1cqi, 10px); font-weight: 800;
+            letter-spacing: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #071018;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.35);
+        }
+        .readout { position: absolute; top: 38%; left: 8%; right: 7%; display: flex; align-items: center; gap: 6px; min-width: 0; }
+        .gauge { width: 16cqi; height: 16cqi; max-width: 54px; max-height: 54px; flex: none; }
+        .gauge-track, .gauge-value { fill: none; stroke-width: 8; }
+        .gauge-track { stroke: rgba(255, 255, 255, 0.22); }
+        .gauge-value { stroke-linecap: round; }
+        .density { min-width: 0; }
+        .density b { display: block; font-size: clamp(18px, 9cqi, 30px); line-height: 0.9; text-shadow: 0 1px 2px #000, 0 0 8px #000, 0 2px 12px #000; }
+        .density span {
+            color: #fff;
+            font-size: clamp(11px, 4.4cqi, 14px);
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            text-shadow: 0 1px 1px #000, 0 0 4px #000, 0 0 8px #000, 0 2px 8px #000;
+        }
+        .coords {
+            position: absolute; left: 8%; right: 7%; bottom: 24%;
+            color: #e7f6ff; font-weight: 700;
+            font-size: clamp(10px, 3.2cqi, 12px);
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            text-shadow: 0 1px 1px #000, 0 0 6px #000;
+        }
+        .meta {
+            position: absolute; left: 8%; right: 7%; bottom: 8%;
+            color: #fff; font-weight: 750;
+            font-size: clamp(11px, 4cqi, 14px);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            text-shadow: 0 1px 1px #000, 0 0 4px #000, 0 0 8px #000, 0 2px 8px #000;
+        }
+        .bottom { display: grid; grid-template-columns: 956fr 416fr; gap: 12px; align-items: stretch; }
+        .map {
+            position: relative;
+            aspect-ratio: 1812 / 674;
+            border-radius: 18px;
+            overflow: hidden;
+            background-image: url("img/01_mapa_base_sin_colores.webp");
+            background-size: 100% 100%;
+            background-position: center;
+            background-repeat: no-repeat;
+            box-shadow: 0 0 22px rgba(40, 160, 255, 0.3);
+        }
+        .map-title {
+            position: absolute; top: 12px; left: 14px;
+            display: flex; align-items: center; gap: 8px;
+            font-weight: 800; text-shadow: 0 2px 8px #000;
+        }
+        .map-title svg { width: 18px; height: 18px; }
+        .map-label {
+            position: absolute; transform: translate(-50%, -50%);
+            text-align: center; pointer-events: none;
+            text-shadow: 0 1px 1px #000, 0 0 4px #000, 0 0 8px #000, 0 2px 8px #000;
+        }
+        .pin {
+            width: 12px; height: 12px; margin: 0 auto 4px; border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg); background: currentColor;
+            box-shadow: 0 0 10px currentColor;
+        }
+        .map-label b, .map-label strong { display: block; transform: none; }
+        .map-label b { font-size: 13px; font-weight: 800; color: #fff; }
+        .map-label strong { font-size: 18px; font-weight: 800; color: #fff; }
+        .map-tint { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+        .map-tint path {
+            fill: rgba(140, 180, 220, 0.16);
+            stroke: rgba(190, 230, 255, 0.55);
+            stroke-width: 2.5;
+            stroke-linejoin: round;
+            vector-effect: non-scaling-stroke;
+            transition: fill 0.45s ease, stroke 0.45s ease;
+        }
+        .map-tint path.is-clear { fill: rgba(25, 240, 160, 0.34); stroke: #7dffc8; filter: drop-shadow(0 0 8px rgba(25, 240, 160, 0.85)); }
+        .map-tint path.is-moderate { fill: rgba(255, 200, 61, 0.34); stroke: #ffe08a; filter: drop-shadow(0 0 8px rgba(255, 200, 61, 0.85)); }
+        .map-tint path.is-congested { fill: rgba(255, 59, 92, 0.36); stroke: #ff8ea0; filter: drop-shadow(0 0 8px rgba(255, 59, 92, 0.9)); }
+        .label-a { left: 30%; top: 32%; }
+        .label-b { left: 74%; top: 31%; }
+        .label-c { left: 24%; top: 72%; }
+        .label-d { left: 77%; top: 74%; }
+        .map-label.is-clear { color: var(--clear); }
+        .map-label.is-moderate { color: var(--moderate); }
+        .map-label.is-congested { color: var(--congested); }
+        .stack { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+        .panel {
+            border-radius: 16px;
+            overflow: hidden;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            padding: 14px 14px 12px;
+            box-shadow: 0 0 16px rgba(40, 140, 255, 0.25);
+            display: flex; flex-direction: column; min-height: 0;
+        }
+        .alerts {
+            position: relative;
+            flex: 1 1 auto;
+            min-height: 160px;
+            padding: 0;
+            background-size: 100% 100%;
+            background-image: url("img/08_panel_gradient_top.png");
+        }
+        .techs-panel {
+            position: relative;
+            flex: 0 0 auto;
+            aspect-ratio: 416 / 179;
+            padding: 0;
+            background-size: 100% 100%;
+            background-image: url("img/09_panel_gradient_bottom.png");
+            container-type: inline-size;
+        }
+        .alerts .panel-head { position: absolute; top: 12%; left: 8%; right: 8%; }
+        .alerts #alerts, .alerts .empty-note { position: absolute; left: 8%; right: 8%; }
+        .alerts #alerts { top: 32%; bottom: 10%; overflow: auto; }
+        .alerts .empty-note { top: 36%; margin: 0; }
+        .tech-fit {
+            position: absolute;
+            inset: 18% 8% 16% 8%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 10px;
+            min-height: 0;
+        }
+        .techs-panel .panel-head,
+        .techs-panel .techs { position: static; }
+        .techs-panel h2 { font-size: clamp(9px, 3.5cqi, 13px); white-space: nowrap; }
+        .panel-head { display: flex; align-items: center; gap: 8px; margin-bottom: 0; }
+        .panel-head h2 {
+            margin: 0; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase;
+        }
+        .panel-head svg { width: 18px; height: 18px; flex: none; }
+        .alert {
+            display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 8px;
+            align-items: start; padding: 8px 2px;
+            border-bottom: 1px solid rgba(255, 180, 200, 0.16);
+        }
+        .alert:last-child { border-bottom: 0; }
+        .alert svg { width: 16px; height: 16px; margin-top: 1px; }
+        .alert b { display: block; color: #ffe8ec; font-size: 13px; line-height: 1.25; overflow-wrap: anywhere; }
+        .alert em { display: block; margin-top: 2px; color: #d5e6f6; font-style: normal; font-size: 12px; line-height: 1.3; }
+        .empty-note { color: #dbe7f5; margin: 0; text-shadow: 0 2px 6px #000; }
+        .techs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; align-items: end; }
+        .tech { min-width: 0; text-align: center; font-size: clamp(8px, 3.4cqi, 12px); font-weight: 700; line-height: 1.1; white-space: nowrap; }
+        .tech svg { width: 7cqi; height: 7cqi; max-width: 26px; max-height: 26px; display: block; margin: 0 auto 4px; filter: drop-shadow(0 0 6px rgba(60, 231, 255, 0.45)); }
+        .sheet-back {
+            position: fixed; inset: 0; background: rgba(2, 6, 14, 0.62);
+            display: grid; place-items: center; z-index: 20; padding: 20px;
+        }
+        .sheet-back[hidden] { display: none; }
+        .sheet { width: min(560px, 100%); border-radius: 18px; padding: 18px; }
+        .sheet h2 { margin: 0 0 12px; }
+        .sheet table { width: 100%; border-collapse: collapse; }
+        .sheet th, .sheet td { text-align: left; padding: 8px 6px; border-bottom: 1px solid rgba(120, 180, 220, 0.18); }
+        .sheet th { color: var(--muted); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+        .sheet p { color: #d5e6f6; line-height: 1.5; }
+        .sheet button {
+            margin-top: 14px; border-radius: 999px; padding: 8px 14px; cursor: pointer;
+            color: white; background: #12386f; border: 1px solid rgba(120, 210, 255, 0.8);
+        }
+        .tone-clear { color: var(--clear); }
+        .tone-moderate { color: var(--moderate); }
+        .tone-congested { color: var(--congested); }
+        .badge.is-clear { background: var(--clear); color: #062015; }
+        .badge.is-moderate { background: var(--moderate); color: #2a1c00; }
+        .badge.is-congested { background: var(--congested); color: #fff; }
+        @media (max-width: 980px) {
+            .app { grid-template-columns: 1fr; }
+            .side-photo { display: none; }
+            .kpis, .zones, .bottom { grid-template-columns: 1fr 1fr; }
+            nav { flex-direction: row; flex-wrap: wrap; }
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <aside class="side">
+        <div class="brand">
+            <svg viewBox="0 0 48 48" aria-hidden="true">
+                <rect x="3" y="6" width="42" height="36" rx="12" fill="#071525" stroke="#3ce7ff"/>
+                <path d="M8 32h32" stroke="#3ce7ff" stroke-width="2"/>
+                <path d="M11 32V22h6v10M21 32V16h6v16M31 32V20h6v12" fill="none" stroke="#7af4ff" stroke-width="1.7"/>
+            </svg>
+            <div><b>SmartTraffic</b><span>Centro de control</span></div>
+        </div>
+        <nav>
+            <button type="button" class="active" id="nav-board">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5z"/></svg>
+                Tablero
+            </button>
+            <a id="history-link" href="#">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V5M4 19h16"/><path d="M8 15v-3M12 15V8M16 15v-5"/></svg>
+                Histórico
+            </a>
+            <button type="button" id="nav-query">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="6"/><path d="M16 16l4 4"/></svg>
+                Estado de zonas
+            </button>
+            <button type="button" id="nav-alerts">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 16V10a6 6 0 1 1 12 0v6l1.5 2h-15L6 16z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>
+                Alertas
+            </button>
+            <button type="button" id="nav-config">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/></svg>
+                Configuración
+            </button>
+        </nav>
+        <div class="side-photo"><p>Tráfico inteligente<br>para una ciudad<br>más conectada</p></div>
+    </aside>
+    <main class="main">
+        <header class="hero">
+            <div>
+                <p class="eyebrow">Centro de control</p>
+                <h1>SmartTraffic</h1>
+                <p class="subtitle">Tráfico vehicular en tiempo real</p>
+            </div>
+            <div class="hero-side">
+                <div class="clock"><b id="clock">--:--:--</b><span id="today"></span></div>
+                <div id="connection" class="pill down"><i class="dot"></i><span id="connection-label">Conectando</span></div>
+            </div>
+        </header>
+        <section class="kpis">
+            <article class="kpi">
+                <div class="ico" style="color:#3ce7ff"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 15h16l-1.2-4.2A2 2 0 0 0 16.9 9H7.1a2 2 0 0 0-1.9 1.8L4 15z"/><circle cx="7.5" cy="16.5" r="1.5"/><circle cx="16.5" cy="16.5" r="1.5"/></svg></div>
+                <div><span>Zonas activas</span><strong id="sum-zones">0</strong></div>
+            </article>
+            <article class="kpi">
+                <div class="ico" style="color:#ff3b5c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 4 3 19h18L12 4z"/><path d="M12 10v4M12 16.5v.5"/></svg></div>
+                <div><span>Zonas congestionadas</span><strong id="sum-congested" class="tone-congested">0</strong></div>
+            </article>
+            <article class="kpi">
+                <div class="ico" style="color:#7af4ff"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="13" r="7"/><path d="M12 13V9M12 4v2"/></svg></div>
+                <div><span>Promedio de tráfico</span><strong id="sum-avg">0<small>vehículos</small></strong></div>
+            </article>
+            <article class="kpi">
+                <div class="ico" style="color:#19f0a0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><path d="M8.5 12.5 11 15l4.5-5"/></svg></div>
+                <div><span>Zona más cargada</span><strong id="sum-worst">—</strong></div>
+            </article>
+        </section>
+        <section class="zones" id="zones">
+            <article class="zone zone-a scene-clear" data-zone="Zona A">
+                <div class="zone-top"><h3>Zona A</h3><span class="badge" data-badge>SIN DATOS</span></div>
+                <div class="readout">
+                    <svg class="gauge" viewBox="0 0 74 74" aria-hidden="true"><circle class="gauge-track" cx="37" cy="37" r="28"></circle><circle class="gauge-value" cx="37" cy="37" r="28" transform="rotate(-90 37 37)"></circle></svg>
+                    <div class="density"><b data-value>—</b><span>vehículos</span></div>
+                </div>
+                <p class="coords" data-coords>—</p>
+                <div class="meta" data-samples>Esperando lecturas</div>
+            </article>
+            <article class="zone zone-b scene-clear" data-zone="Zona B">
+                <div class="zone-top"><h3>Zona B</h3><span class="badge" data-badge>SIN DATOS</span></div>
+                <div class="readout">
+                    <svg class="gauge" viewBox="0 0 74 74" aria-hidden="true"><circle class="gauge-track" cx="37" cy="37" r="28"></circle><circle class="gauge-value" cx="37" cy="37" r="28" transform="rotate(-90 37 37)"></circle></svg>
+                    <div class="density"><b data-value>—</b><span>vehículos</span></div>
+                </div>
+                <p class="coords" data-coords>—</p>
+                <div class="meta" data-samples>Esperando lecturas</div>
+            </article>
+            <article class="zone zone-c scene-clear" data-zone="Zona C">
+                <div class="zone-top"><h3>Zona C</h3><span class="badge" data-badge>SIN DATOS</span></div>
+                <div class="readout">
+                    <svg class="gauge" viewBox="0 0 74 74" aria-hidden="true"><circle class="gauge-track" cx="37" cy="37" r="28"></circle><circle class="gauge-value" cx="37" cy="37" r="28" transform="rotate(-90 37 37)"></circle></svg>
+                    <div class="density"><b data-value>—</b><span>vehículos</span></div>
+                </div>
+                <p class="coords" data-coords>—</p>
+                <div class="meta" data-samples>Esperando lecturas</div>
+            </article>
+            <article class="zone zone-d scene-clear" data-zone="Zona D">
+                <div class="zone-top"><h3>Zona D</h3><span class="badge" data-badge>SIN DATOS</span></div>
+                <div class="readout">
+                    <svg class="gauge" viewBox="0 0 74 74" aria-hidden="true"><circle class="gauge-track" cx="37" cy="37" r="28"></circle><circle class="gauge-value" cx="37" cy="37" r="28" transform="rotate(-90 37 37)"></circle></svg>
+                    <div class="density"><b data-value>—</b><span>vehículos</span></div>
+                </div>
+                <p class="coords" data-coords>—</p>
+                <div class="meta" data-samples>Esperando lecturas</div>
+            </article>
+        </section>
+        <section class="bottom">
+            <div class="map" aria-label="Mapa de la ciudad">
+                <div class="map-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#3ce7ff" stroke-width="1.8"><path d="M9 4 4 6v14l5-2 6 2 5-2V4l-5 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>
+                    Mapa de la ciudad
+                </div>
+                <svg class="map-tint" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                    <path data-map="Zona A" d="M 31.3 15.0 L 33.2 15.0 L 34.8 15.2 L 36.0 15.8 L 36.9 16.5 L 37.6 17.5 L 38.3 18.2 L 39.1 18.8 L 39.9 19.0 L 40.9 19.0 L 41.8 19.4 L 42.8 20.1 L 43.8 21.2 L 44.9 22.8 L 45.7 24.4 L 46.3 26.3 L 46.7 28.4 L 47.0 30.6 L 46.5 33.1 L 45.3 35.7 L 43.4 38.5 L 40.7 41.5 L 38.5 43.8 L 36.7 45.4 L 35.2 46.4 L 34.2 46.6 L 33.3 47.1 L 32.6 47.7 L 32.1 48.5 L 31.9 49.5 L 31.5 50.1 L 31.0 50.4 L 30.5 50.2 L 29.8 49.8 L 29.3 49.6 L 29.0 49.7 L 28.8 50.1 L 28.7 50.9 L 28.4 51.4 L 28.0 51.8 L 27.4 52.0 L 26.6 52.0 L 26.0 51.8 L 25.4 51.2 L 24.9 50.5 L 24.4 49.5 L 23.5 48.4 L 22.1 47.1 L 20.2 45.8 L 17.8 44.2 L 15.9 42.6 L 14.6 40.9 L 13.9 39.0 L 13.7 37.0 L 13.7 35.4 L 13.8 34.1 L 14.2 33.2 L 14.7 32.8 L 15.2 31.8 L 15.6 30.4 L 16.0 28.6 L 16.2 26.4 L 16.7 24.5 L 17.3 23.0 L 18.1 21.9 L 19.1 21.1 L 19.8 20.3 L 20.4 19.4 L 20.8 18.5 L 21.0 17.5 L 21.6 16.8 L 22.5 16.2 L 23.8 16.0 L 25.5 16.0 L 26.8 15.9 L 27.7 15.8 L 28.2 15.6 L 28.3 15.4 L 28.9 15.2 L 29.9 15.1 Z"/>
+                    <path data-map="Zona B" d="M 75.2 16.1 L 78.8 16.9 L 81.6 18.0 L 83.8 19.5 L 85.3 21.4 L 86.2 23.6 L 86.9 25.3 L 87.4 26.4 L 87.9 27.0 L 88.2 27.0 L 88.6 27.6 L 89.2 28.7 L 89.8 30.4 L 90.5 32.6 L 91.1 34.6 L 91.4 36.2 L 91.6 37.5 L 91.6 38.5 L 91.4 39.6 L 91.1 40.7 L 90.5 41.9 L 89.8 43.1 L 88.8 44.0 L 87.6 44.5 L 86.0 44.6 L 84.3 44.4 L 82.4 44.4 L 80.4 44.6 L 78.3 45.1 L 76.1 45.9 L 74.4 46.6 L 73.3 47.4 L 72.6 48.1 L 72.5 48.9 L 72.3 49.4 L 72.0 49.8 L 71.6 50.0 L 71.1 50.0 L 70.7 50.2 L 70.4 50.6 L 70.1 51.1 L 70.0 51.9 L 69.8 52.4 L 69.5 52.8 L 69.0 53.0 L 68.3 53.0 L 67.8 52.8 L 67.5 52.2 L 67.2 51.5 L 67.1 50.5 L 66.7 49.2 L 66.0 47.8 L 65.0 46.0 L 63.8 44.0 L 62.5 42.2 L 61.1 40.8 L 59.7 39.5 L 58.3 38.5 L 57.2 37.3 L 56.4 35.9 L 55.9 34.4 L 55.8 32.6 L 55.9 31.1 L 56.3 29.9 L 57.0 28.9 L 58.0 28.1 L 58.7 27.2 L 59.3 26.1 L 59.7 24.8 L 60.0 23.2 L 60.3 22.2 L 60.7 21.8 L 61.2 21.8 L 61.9 22.2 L 62.4 22.4 L 62.9 22.1 L 63.4 21.5 L 63.8 20.5 L 64.4 19.6 L 65.3 18.7 L 66.3 17.9 L 67.6 17.1 L 68.6 16.5 L 69.3 16.0 L 69.7 15.6 L 69.8 15.4 L 70.7 15.4 L 72.5 15.6 Z"/>
+                    <path data-map="Zona C" d="M 27.6 51.0 L 31.8 51.0 L 35.0 51.5 L 37.2 52.5 L 38.4 54.0 L 38.6 56.0 L 39.0 57.8 L 39.6 59.2 L 40.3 60.5 L 41.3 61.5 L 42.0 62.8 L 42.5 64.2 L 42.9 66.0 L 43.0 68.0 L 42.9 69.8 L 42.8 71.2 L 42.5 72.5 L 42.0 73.5 L 41.3 74.6 L 40.2 75.7 L 38.9 76.9 L 37.2 78.1 L 35.9 79.2 L 34.9 80.2 L 34.2 81.1 L 34.0 81.9 L 33.6 82.4 L 33.2 82.6 L 32.7 82.6 L 32.2 82.4 L 31.7 82.4 L 31.2 82.8 L 30.8 83.5 L 30.3 84.5 L 29.9 85.2 L 29.4 85.8 L 28.9 86.0 L 28.4 86.0 L 27.9 86.2 L 27.5 86.8 L 27.1 87.5 L 26.9 88.5 L 26.4 89.2 L 25.9 89.6 L 25.3 89.6 L 24.5 89.4 L 23.8 89.4 L 23.0 89.8 L 22.3 90.5 L 21.6 91.5 L 20.7 92.1 L 19.7 92.4 L 18.5 92.2 L 17.1 91.8 L 16.0 90.8 L 15.1 89.4 L 14.5 87.6 L 14.0 85.4 L 13.5 83.6 L 12.8 82.2 L 12.0 81.2 L 11.0 80.8 L 10.2 80.1 L 9.6 79.2 L 9.2 78.1 L 8.8 76.9 L 8.5 75.8 L 8.0 74.9 L 7.5 74.2 L 6.8 73.8 L 6.4 73.1 L 6.1 72.4 L 5.9 71.5 L 5.9 70.5 L 6.0 69.7 L 6.1 69.1 L 6.3 68.6 L 6.7 68.4 L 6.8 68.0 L 6.9 67.5 L 6.8 66.9 L 6.6 66.1 L 6.5 65.2 L 6.4 64.2 L 6.5 63.1 L 7.3 60.4 L 8.6 58.8 L 10.6 57.0 L 13.3 55.0 L 15.5 53.5 L 17.2 52.5 L 18.6 52.0 L 19.5 52.0 L 20.2 51.9 L 20.7 51.8 L 21.1 51.6 L 21.2 51.4 L 22.3 51.2 L 24.4 51.1 Z"/>
+                    <path data-map="Zona D" d="M 69.8 49.0 L 70.8 49.0 L 71.6 49.2 L 72.2 49.6 L 72.5 50.1 L 72.6 50.9 L 72.9 51.6 L 73.4 52.2 L 74.1 52.8 L 74.9 53.2 L 75.6 53.5 L 76.2 53.5 L 76.7 53.2 L 77.0 52.8 L 77.6 52.4 L 78.5 52.1 L 79.8 52.0 L 81.3 52.0 L 82.6 52.2 L 83.5 52.8 L 84.0 53.5 L 84.2 54.5 L 85.0 55.6 L 86.5 56.7 L 88.6 57.9 L 91.3 59.1 L 93.4 60.3 L 94.7 61.4 L 95.4 62.5 L 95.4 63.5 L 95.3 64.3 L 95.2 64.9 L 94.9 65.4 L 94.6 65.6 L 94.4 66.2 L 94.3 67.2 L 94.4 68.6 L 94.7 70.4 L 94.5 72.5 L 94.0 75.0 L 93.1 77.9 L 91.9 81.1 L 90.9 83.9 L 90.3 86.3 L 90.0 88.2 L 90.0 89.8 L 89.7 91.0 L 89.2 92.0 L 88.4 92.8 L 87.4 93.2 L 86.5 93.9 L 85.8 94.6 L 85.3 95.5 L 85.0 96.5 L 84.5 97.3 L 84.0 97.9 L 83.3 98.4 L 82.4 98.6 L 81.7 98.5 L 81.1 98.0 L 80.6 97.1 L 80.1 95.9 L 79.4 94.8 L 78.4 93.9 L 77.0 93.2 L 75.3 92.8 L 73.8 92.1 L 72.4 91.4 L 71.1 90.5 L 69.9 89.5 L 69.0 88.5 L 68.2 87.5 L 67.7 86.5 L 67.4 85.5 L 66.8 84.6 L 66.0 83.7 L 64.9 82.9 L 63.5 82.1 L 62.3 81.0 L 61.2 79.5 L 60.3 77.6 L 59.4 75.4 L 58.8 73.1 L 58.5 70.7 L 58.4 68.2 L 58.5 65.8 L 58.7 63.8 L 59.2 62.2 L 59.8 61.2 L 60.7 60.8 L 61.5 59.8 L 62.5 58.4 L 63.5 56.6 L 64.5 54.4 L 65.4 52.6 L 66.2 51.4 L 66.9 50.6 L 67.4 50.4 L 67.8 50.1 L 68.1 49.9 L 68.2 49.6 L 68.2 49.4 L 68.5 49.2 L 69.0 49.1 Z"/>
+                </svg>
+                <div class="map-label label-a" id="label-A"><i class="pin"></i><b>Zona A</b><strong data-value>—</strong></div>
+                <div class="map-label label-b" id="label-B"><i class="pin"></i><b>Zona B</b><strong data-value>—</strong></div>
+                <div class="map-label label-c" id="label-C"><i class="pin"></i><b>Zona C</b><strong data-value>—</strong></div>
+                <div class="map-label label-d" id="label-D"><i class="pin"></i><b>Zona D</b><strong data-value>—</strong></div>
+            </div>
+            <div class="stack">
+                <article class="panel alerts" id="alertas">
+                    <div class="panel-head">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#ff5b74" stroke-width="1.8"><path d="M6 16V10a6 6 0 1 1 12 0v6l1.5 2h-15L6 16z"/></svg>
+                        <h2>Alertas recientes</h2>
+                    </div>
+                    <div id="alerts"></div>
+                    <p id="alerts-empty" class="empty-note">Todavía no hay una zona congestionada.</p>
+                </article>
+                <article class="panel techs-panel">
+                    <div class="tech-fit">
+                    <div class="panel-head">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#3ce7ff" stroke-width="1.8"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>
+                        <h2>Tecnologías del sistema</h2>
+                    </div>
+                    <div class="techs">
+                        <div class="tech"><svg viewBox="0 0 32 32" fill="none" stroke="#7af4ff" stroke-width="1.6"><circle cx="8" cy="16" r="3"/><circle cx="24" cy="8" r="3"/><circle cx="24" cy="24" r="3"/><path d="M11 16h7M21 10.5 11 15M21 21.5 11 17"/></svg>Kafka</div>
+                        <div class="tech"><svg viewBox="0 0 32 32" fill="none" stroke="#ffb15a" stroke-width="1.6"><path d="M10 20c0 4 2.5 6 6 6s6-2 6-6c0-3-2-4-3-6 2 0 5-2 5-5-3 1-5 3-6 5-1-3-4-6-7-6 1 3 2 5 2 7-2 1-3 3-3 5z"/></svg>RabbitMQ</div>
+                        <div class="tech"><svg viewBox="0 0 32 32" fill="none" stroke="#7eb6ff" stroke-width="1.6"><ellipse cx="16" cy="9" rx="8" ry="3"/><path d="M8 9v10c0 1.7 3.6 3 8 3s8-1.3 8-3V9"/><path d="M8 14c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>PostgreSQL</div>
+                        <div class="tech"><svg viewBox="0 0 32 32" fill="none" stroke="#3ce7ff" stroke-width="1.6"><path d="M6 18c2-6 6-9 10-9 5 0 8 3 10 7"/><path d="M8 18h16v6H8z"/><path d="M12 24v2M20 24v2"/></svg>Docker</div>
+                    </div>
+                    </div>
+                </article>
+            </div>
+        </section>
+    </main>
+</div>
+<div id="sheet-back" class="sheet-back" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+        <h2 id="sheet-title"></h2>
+        <div id="sheet-body"></div>
+        <button type="button" id="sheet-close">Cerrar</button>
+    </div>
+</div>
+<script>
+    const connection = document.getElementById("connection");
+    const alertsBox = document.getElementById("alerts");
+    const alertsEmpty = document.getElementById("alerts-empty");
+    const sheetBack = document.getElementById("sheet-back");
+    const previous = new Map();
+    const alerts = [];
+    const known = new Set(["DESPEJADA", "MODERADA", "CONGESTIONADA"]);
+    const colors = { DESPEJADA: "#19f0a0", MODERADA: "#ffc83d", CONGESTIONADA: "#ff3b5c" };
+    const badgeClass = { DESPEJADA: "is-clear", MODERADA: "is-moderate", CONGESTIONADA: "is-congested" };
+    let latest = null;
+    const historyLink = document.getElementById("history-link");
+    historyLink.href = location.port === "8765" ? "/history.html" : location.protocol + "//" + location.hostname + ":8081/";
+
+    function esc(value) {
+        return String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+    }
+    function safeStatus(status) { return known.has(status) ? status : "MODERADA"; }
+    function ago(date) {
+        const seconds = Math.max(0, Math.round((Date.now() - date.getTime()) / 1000));
+        if (seconds < 10) return "ahora";
+        if (seconds < 60) return "hace " + seconds + " s";
+        const minutes = Math.round(seconds / 60);
+        return minutes === 1 ? "hace 1 min" : "hace " + minutes + " min";
+    }
+    function alertMarkup(alert) {
+        return `<div class="alert"><svg viewBox="0 0 24 24" fill="none" stroke="#ff5b74" stroke-width="1.8"><path d="M12 4 3 19h18L12 4z"/><path d="M12 10v4M12 16.5v.5"/></svg><div><b>${esc(alert.text)}</b><em>${esc(alert.detail)} · ${esc(ago(alert.at))}</em></div></div>`;
+    }
+    function renderAlerts() {
+        alertsEmpty.hidden = alerts.length > 0;
+        alertsBox.innerHTML = alerts.map(alertMarkup).join("");
+    }
+    // Vista derivada en el navegador: lista las zonas que ahora están congestionadas.
+    // Las alertas reales las despacha alert_dispatcher cuando el nivel sube.
+    function noteAlerts(zones, when) {
+        const active = new Set();
+        for (const zone of zones) {
+            if (safeStatus(zone.status) !== "CONGESTIONADA") continue;
+            active.add(zone.zone_id);
+            if (!previous.has(zone.zone_id)) previous.set(zone.zone_id, when);
+        }
+        for (const zoneId of [...previous.keys()]) {
+            if (!active.has(zoneId)) previous.delete(zoneId);
+        }
+        alerts.length = 0;
+        for (const zone of zones) {
+            if (!active.has(zone.zone_id)) continue;
+            alerts.push({
+                text: zone.zone_id + " está congestionada",
+                detail: Number(zone.density).toFixed(1) + " vehículos",
+                at: previous.get(zone.zone_id)
+            });
+        }
+        renderAlerts();
+    }
+    function paintGauge(article, density, status) {
+        const ring = article.querySelector(".gauge-value");
+        const turn = 2 * Math.PI * 28;
+        const portion = Math.max(0, Math.min(1, Number(density) / 40));
+        ring.setAttribute("stroke", colors[status]);
+        ring.setAttribute("stroke-dasharray", turn.toFixed(2));
+        ring.setAttribute("stroke-dashoffset", (turn * (1 - portion)).toFixed(2));
+        ring.style.filter = "drop-shadow(0 0 5px " + colors[status] + ")";
+    }
+    function render(state) {
+        latest = state;
+        const zones = state.zones || [];
+        const when = state.published_at ? new Date(state.published_at) : new Date();
+        const counts = { DESPEJADA: 0, MODERADA: 0, CONGESTIONADA: 0 };
+        let total = 0;
+        let worst = null;
+        for (const zone of zones) {
+            const status = safeStatus(zone.status);
+            counts[status] += 1;
+            total += Number(zone.density);
+            if (!worst || Number(zone.density) > Number(worst.density)) worst = zone;
+            const article = document.querySelector('[data-zone="' + zone.zone_id + '"]');
+            if (article) {
+                const badge = article.querySelector("[data-badge]");
+                badge.textContent = status;
+                badge.className = "badge " + badgeClass[status];
+                article.classList.remove("scene-clear", "scene-moderate", "scene-congested");
+                if (status === "CONGESTIONADA") article.classList.add("scene-congested");
+                else if (status === "MODERADA") article.classList.add("scene-moderate");
+                else article.classList.add("scene-clear");
+                article.querySelector("[data-value]").textContent = Number(zone.density).toFixed(1);
+                article.querySelector("[data-samples]").textContent = zone.sample_count + " lecturas";
+                article.querySelector("[data-coords]").textContent =
+                    Number(zone.latitude).toFixed(4) + ", " + Number(zone.longitude).toFixed(4);
+                paintGauge(article, zone.density, status);
+            }
+            const letter = String(zone.zone_id).replace("Zona ", "").trim();
+            const label = document.getElementById("label-" + letter);
+            if (label) {
+                label.querySelector("[data-value]").textContent = Number(zone.density).toFixed(1);
+                label.classList.remove("is-clear", "is-moderate", "is-congested");
+                label.classList.add(badgeClass[status]);
+            }
+            const tint = document.querySelector('[data-map="' + zone.zone_id + '"]');
+            if (tint) tint.setAttribute("class", badgeClass[status]);
+        }
+        document.getElementById("sum-zones").textContent = String(zones.length);
+        document.getElementById("sum-congested").textContent = String(counts.CONGESTIONADA);
+        document.getElementById("sum-avg").innerHTML = (zones.length ? (total / zones.length).toFixed(1) : "0") + "<small>vehículos</small>";
+        document.getElementById("sum-worst").textContent = worst ? worst.zone_id : "—";
+        noteAlerts(zones, when);
+    }
+    function openSheet(title, html) {
+        document.getElementById("sheet-title").textContent = title;
+        document.getElementById("sheet-body").innerHTML = html;
+        sheetBack.hidden = false;
+    }
+    function closeSheet() { sheetBack.hidden = true; }
+    document.getElementById("sheet-close").addEventListener("click", closeSheet);
+    sheetBack.addEventListener("click", (event) => { if (event.target === sheetBack) closeSheet(); });
+    document.getElementById("nav-board").addEventListener("click", () => {
+        closeSheet();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+    document.getElementById("nav-alerts").addEventListener("click", () => {
+        const body = alerts.length
+            ? alerts.map(alertMarkup).join("")
+            : "<p>Todavía no hay una zona congestionada.</p>";
+        openSheet("Alertas recientes", body);
+    });
+    document.getElementById("nav-query").addEventListener("click", () => {
+        const zones = latest && latest.zones ? latest.zones : [];
+        const body = zones.length
+            ? `<table><thead><tr><th>Zona</th><th>Vehículos</th><th>Estado</th><th>Muestras</th></tr></thead><tbody>${zones.map((zone) => `<tr><td>${esc(zone.zone_id)}</td><td>${esc(Number(zone.density).toFixed(1))}</td><td class="${badgeClass[safeStatus(zone.status)] === "is-clear" ? "tone-clear" : badgeClass[safeStatus(zone.status)] === "is-moderate" ? "tone-moderate" : "tone-congested"}">${esc(safeStatus(zone.status))}</td><td>${esc(zone.sample_count)}</td></tr>`).join("")}</tbody></table>`
+            : "<p>Todavía no llega el estado de la ciudad.</p>";
+        openSheet("Estado de zonas", body);
+    });
+    document.getElementById("nav-config").addEventListener("click", () => {
+        openSheet("Umbrales del semáforo", "<p><b class=\"tone-clear\">DESPEJADA</b> por debajo de 10 vehículos.</p><p><b class=\"tone-moderate\">MODERADA</b> de 10 a 24 vehículos.</p><p><b class=\"tone-congested\">CONGESTIONADA</b> desde 25 vehículos.</p><p>La densidad del tablero es el promedio ponderado de las últimas 5 lecturas de cada zona: la más reciente pesa más.</p>");
+    });
+    function tick() {
+        const now = new Date();
+        document.getElementById("clock").textContent = now.toLocaleTimeString("es-CO", { hour12: false });
+        document.getElementById("today").textContent = now.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" });
+        if (alerts.length) renderAlerts();
+    }
+    function connect() {
+        const protocol = location.protocol === "https:" ? "wss" : "ws";
+        const socket = new WebSocket(protocol + "://" + location.host + "/ws/traffic");
+        socket.onopen = () => { document.getElementById("connection-label").textContent = "En vivo"; connection.className = "pill live"; };
+        socket.onclose = () => { document.getElementById("connection-label").textContent = "Reconectando"; connection.className = "pill down"; setTimeout(connect, 2000); };
+        socket.onmessage = (event) => render(JSON.parse(event.data));
+    }
+    tick();
+    setInterval(tick, 1000);
+    connect();
+</script>
+</body>
+</html>
