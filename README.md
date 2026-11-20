@@ -6,7 +6,7 @@ Monitoreo de tráfico vehicular en tiempo real. Sensores publican conteos por zo
 
 El dominio no depende de Spring, Kafka, RabbitMQ ni JPA. Esos frameworks viven en los adaptadores.
 
-El repositorio se organiza en `backend/` (código Java multi-módulo) y `frontend/` (gateway nginx). Cada microservicio Spring usa capas `config`, `controller`, `service`, `repository`, `dto`, `mapper`, `listener` y `domain` (cuando aplica). El negocio compartido está en `backend/traffic-domain`; los DTO del bus en `backend/traffic-messaging/dto`.
+El repositorio se organiza en `backend/` (un solo JAR Spring Boot) y `frontend/` (gateway nginx). El código Java sigue capas Hotel: `config`, `controller`, `service`, `repository`, `dto`, `mapper`, `listener`, `domain` y `exception`. En Docker siguen varios contenedores; cada uno arranca el mismo JAR con un `SPRING_PROFILES_ACTIVE` distinto (`simulator`, `processor`, `archiver`, `dashboard`, `dispatcher`, `query-client`).
 
 ## Demo
 
@@ -48,7 +48,7 @@ flowchart LR
 | `query_client` | Reloj | Work queue de consultas | Pregunta cada 15 segundos y espera su respuesta |
 | `dashboard.html` | WebSocket | Pantalla | Muestra zonas, mapa y alertas en vivo |
 
-Los módulos de Maven llevan guion (`traffic-sensor-simulator`). Los contenedores de Docker llevan guion bajo (`traffic_sensor_simulator`).
+Un solo artefacto Maven (`smart-traffic`). Los contenedores Docker llevan guion bajo (`traffic_sensor_simulator`) y comparten la imagen `smarttraffic-app:1.0.0`.
 
 ## Por qué Kafka y por qué RabbitMQ
 
@@ -71,16 +71,16 @@ RabbitMQ reparte el estado ya calculado. El fanout `traffic_updates` entrega una
 | --- | --- |
 | KTable / `zone_states` | `CityTrafficBoard.zoneStates` |
 | Replicación de estado | `ZoneStateReplica` |
-| Fanout, work queue y topic exchange | `*.config.ProcessorConfig`, `DispatcherConfig`, `QueryClientConfig` |
-| Topic Kafka `raw_traffic_data` | `simulator.config.SimulatorConfig.rawTrafficData` (`NewTopic`) |
+| Fanout, work queue y topic exchange | `ProcessorConfig`, `DispatcherConfig`, `QueryClientConfig` |
+| Topic Kafka `raw_traffic_data` | `SimulatorConfig.rawTrafficData` (`NewTopic`) |
 | Redes Docker | `backend-net` / `frontend-net` |
-| Capas por microservicio | `config/`, `controller/`, `service/`, `repository/`, `dto/`, `mapper/`, `listener/`, `domain/` |
+| Capas Hotel + perfiles | `config/`, `controller/`, `service/`, `repository/`, `dto/`, `mapper/`, `listener/`, `domain/`, `exception/` |
 | Value objects | `ZoneId`, `VehicleCount`, `ClientId`, `Coordinates` |
 | Strategy | `DensityStrategy` |
 | State | `CongestionState` |
 | Observer | `CongestionObserver` |
-| Repository / DIP | `TrafficHistoryRepository` + `archiver.repository.JpaTrafficHistoryRepository` |
-| Transacción | `archiver.repository.ReadingInsert` (`REQUIRES_NEW`) |
+| Repository / DIP | `TrafficHistoryRepository` + `JpaTrafficHistoryRepository` |
+| Transacción | `ReadingInsert` (`REQUIRES_NEW`) |
 | Datos aleatorios | `RandomZoneCounts` |
 | `ZoneNotFoundException` | `AlertQueryService` / `DispatchListeners` |
 
@@ -92,7 +92,7 @@ El tablero no muestra la última lectura suelta. Muestra el promedio de la venta
 
 ## Docker
 
-Cada servicio Java se construye en dos etapas: Maven compila y una imagen JRE ligera ejecuta. El proceso no es root (`USER 10001`). Cada contenedor tiene tope de CPU y de RAM, y la JVM usa `MaxRAMPercentage` para quedarse dentro de ese tope. Los servicios Java llevan `no-new-privileges`. Kafka, RabbitMQ y PostgreSQL también tienen límite y `restart: unless-stopped`, así al encender la máquina virtual vuelven solos.
+El backend se construye una sola vez (Maven + JRE) y todos los contenedores Java reutilizan esa imagen con distinto perfil. El proceso no es root (`USER 10001`). Cada contenedor tiene tope de CPU y de RAM, y la JVM usa `MaxRAMPercentage` para quedarse dentro de ese tope. Los servicios Java llevan `no-new-privileges`. Kafka, RabbitMQ y PostgreSQL también tienen límite y `restart: unless-stopped`, así al encender la máquina virtual vuelven solos.
 
 El topic `raw_traffic_data` se declara en código (`SimulatorConfig` → `NewTopic`, 3 particiones) y el broker también admite auto-create.
 

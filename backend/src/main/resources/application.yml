@@ -1,0 +1,178 @@
+spring:
+  application:
+    name: smart-traffic
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+
+logging:
+  pattern:
+    console: "%d{HH:mm:ss} %-5level %msg%n"
+
+---
+spring:
+  config:
+    activate:
+      on-profile: simulator
+  main:
+    web-application-type: none
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration
+      - org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration
+  kafka:
+    bootstrap-servers: kafka:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      properties:
+        enable.idempotence: true
+
+traffic:
+  zones: Zona A,Zona B,Zona C,Zona D
+  max-vehicles: 41
+  publish-interval-ms: 3000
+
+---
+spring:
+  config:
+    activate:
+      on-profile: processor
+  main:
+    web-application-type: none
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration
+  kafka:
+    bootstrap-servers: kafka:9092
+    consumer:
+      group-id: traffic-density-processor
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    listener:
+      missing-topics-fatal: false
+  rabbitmq:
+    host: rabbitmq
+    username: smarttraffic
+    password: smarttraffic
+
+traffic:
+  density:
+    strategy: weighted
+    window-size: 5
+  broadcast-interval-ms: 5000
+
+---
+spring:
+  config:
+    activate:
+      on-profile: archiver
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration
+  kafka:
+    bootstrap-servers: kafka:9092
+    consumer:
+      group-id: traffic-archiver
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    listener:
+      missing-topics-fatal: false
+  datasource:
+    url: jdbc:postgresql://postgres:5432/smarttraffic
+    username: traffic
+    password: traffic
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate.jdbc.time_zone: UTC
+
+server:
+  port: 8081
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dispatcher
+  main:
+    web-application-type: none
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration
+      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+  rabbitmq:
+    host: rabbitmq
+    username: smarttraffic
+    password: smarttraffic
+    listener:
+      simple:
+        default-requeue-rejected: false
+        prefetch: 1
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dashboard
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration
+      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+  rabbitmq:
+    host: rabbitmq
+    username: smarttraffic
+    password: smarttraffic
+    listener:
+      simple:
+        default-requeue-rejected: false
+        prefetch: 1
+
+server:
+  port: 8080
+
+traffic:
+  ws-allowed-origins: ${TRAFFIC_WS_ALLOWED_ORIGINS:http://localhost,http://127.0.0.1}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: query-client
+  main:
+    web-application-type: none
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration
+      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+  rabbitmq:
+    host: rabbitmq
+    username: smarttraffic
+    password: smarttraffic
+    listener:
+      simple:
+        default-requeue-rejected: false
+        prefetch: 1
+
+traffic:
+  client-id: client_456
+  query-interval-ms: 15000
+  query-initial-delay-ms: 12000
+  routes: Zona A|Zona B;Zona C;Zona A|Zona C|Zona D;Zona B|Zona D
